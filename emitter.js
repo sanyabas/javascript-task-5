@@ -24,7 +24,6 @@ function getEmitter() {
          * @returns {Object} emitter
          */
         on: function (event, context, handler) {
-            console.info(event, context, handler);
             this._events.push({
                 event, context, handler: function () {
                     return handler.call(context);
@@ -41,7 +40,6 @@ function getEmitter() {
          * @returns {Object} emitter
          */
         off: function (event, context) {
-            console.info(event, context);
             const childEventsReg = new RegExp(`^${event}[.]([a-zA-Z.]+)`);
 
             function shouldBeDeleted(obj) {
@@ -67,15 +65,13 @@ function getEmitter() {
          * @returns {Object} emitter
          */
         emit: function (event) {
-            console.info(event);
-
-            let parents = event.split('.');
-            while (parents.length) {
-                const curEvent = parents.join('.');
+            let parts = event.split('.');
+            while (parts.length) {
+                const curEvent = parts.join('.');
                 this._events
                     .filter(obj => obj.event === curEvent)
                     .forEach(obj => obj.handler());
-                parents.pop();
+                parts.pop();
             }
 
             return this;
@@ -91,7 +87,6 @@ function getEmitter() {
          * @returns {Object} emitter
          */
         several: function (event, context, handler, times) {
-            console.info(event, context, handler, times);
             if (times <= 0) {
                 this.on(event, context, handler);
             }
@@ -118,7 +113,6 @@ function getEmitter() {
          * @param {Number} frequency – как часто уведомлять
          */
         through: function (event, context, handler, frequency) {
-            console.info(event, context, handler, frequency);
             if (frequency <= 0) {
                 this.on(event, context, handler);
             }
