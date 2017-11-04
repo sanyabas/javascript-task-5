@@ -42,19 +42,12 @@ function getEmitter() {
         off: function (event, context) {
             const childEventsReg = new RegExp(`^${event}[.]([a-zA-Z.]+)`);
 
-            function shouldBeDeleted(obj) {
-                return obj.context === context &&
-                    (obj.event === event || childEventsReg.test(obj.event));
+            function shouldBeSaved(obj) {
+                return obj.context !== context ||
+                    (obj.event !== event && !childEventsReg.test(obj.event));
             }
 
-            const objectsToDelete = this._events.filter(shouldBeDeleted);
-            for (const obj of objectsToDelete) {
-                const indexToSplice = this._events.indexOf(obj);
-                if (indexToSplice === -1) {
-                    throw new RangeError();
-                }
-                this._events.splice(indexToSplice, 1);
-            }
+            this._events = this._events.filter(shouldBeSaved);
 
             return this;
         },
@@ -87,18 +80,16 @@ function getEmitter() {
          * @returns {Object} emitter
          */
         several: function (event, context, handler, times) {
-            if (times <= 0) {
-                this.on(event, context, handler);
-            }
-
-            this.on(
-                event, context, () => {
+            let newHandler = handler;
+            if (times > 0) {
+                newHandler = () => {
                     if (times > 0) {
                         handler.call(context);
                     }
                     times--;
-                }
-            );
+                };
+            }
+            this.on(event, context, newHandler);
 
             return this;
         },
@@ -113,17 +104,17 @@ function getEmitter() {
          * @param {Number} frequency – как часто уведомлять
          */
         through: function (event, context, handler, frequency) {
-            if (frequency <= 0) {
-                this.on(event, context, handler);
-            }
-
+            let newHandler = handler;
             let counter = 0;
-            this.on(event, context, () => {
-                if (counter % frequency === 0) {
-                    handler.call(context);
-                }
-                counter++;
-            });
+            if (frequency > 0) {
+                newHandler = () => {
+                    if (counter % frequency === 0) {
+                        handler.call(context);
+                    }
+                    counter++;
+                };
+            }
+            this.on(event, context, newHandler);
 
             return this;
         }
